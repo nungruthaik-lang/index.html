@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Random Seats: Classroom Arcade — ระบบจัดโต๊ะเรียน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-cabinet:#15101f;
+  --bg-panel:#211733;
+  --bg-panel-raised:#2b1f45;
+  --bg-panel-soft:#1c1430;
+  --accent-pink:#ff2e84;
+  --accent-pink-dim:#a01f59;
+  --accent-cyan:#29e7c9;
+  --accent-cyan-dim:#1a8d7c;
+  --accent-gold:#ffc640;
+  --accent-gold-dim:#a3811f;
+  --danger:#ff5c5c;
+  --success:#4cd97b;
+  --text-main:#f3ecff;
+  --text-dim:#b9a9de;
+  --text-faint:#7e6ba3;
+  --line:rgba(255,255,255,.10);
+  --grid-line:rgba(255,255,255,.07);
+  --shadow-deep:0 18px 40px rgba(0,0,0,.45);
+  --radius:14px;
+  --cell:58px;
+  --gap:8px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse 900px 500px at 20% -10%, rgba(255,46,132,.10), transparent 60%),
+    radial-gradient(ellipse 900px 600px at 100% 0%, rgba(41,231,201,.08), transparent 60%),
+    var(--bg-cabinet);
+  color:var(--text-main);
+  font-family:'Kanit',system-ui,sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.display{font-family:'Chakra Petch',system-ui,sans-serif;}
+button{font-family:inherit;}
+:focus-visible{outline:3px solid var(--accent-cyan); outline-offset:2px; border-radius:6px;}
+*{scrollbar-color: var(--accent-pink-dim) var(--bg-panel-soft); scrollbar-width:thin;}
+
+#app{max-width:1180px;margin:0 auto;padding:18px 16px 60px;}
+
+/* ---------- HEADER ---------- */
+.topbar{
+  background:linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-panel-soft) 100%);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,.05);
+  padding:16px 20px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  position:relative;
+  overflow:hidden;
+}
+.topbar::before{
+  content:"";
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg, var(--accent-pink) 0 6px, var(--accent-cyan) 6px 12px, var(--accent-gold) 12px 18px, transparent 18px 24px);
+  opacity:.5;
+  height:3px;
+  top:0; left:0; right:0;
+}
+.brand{display:flex; align-items:center; gap:12px; min-width:0;}
+.brand-emoji{font-size:34px; line-height:1; filter:drop-shadow(0 0 10px rgba(255,46,132,.55));}
+.brand-text{display:flex; flex-direction:column; min-width:0;}
+.brand-title{
+  font-weight:700; font-size:22px; letter-spacing:.5px; color:var(--text-main);
+  text-shadow:0 0 14px rgba(255,46,132,.55), 0 0 2px rgba(255,255,255,.4);
+  white-space:nowrap;
+}
+.brand-sub{
+  font-size:11px; letter-spacing:3px; color:var(--accent-cyan); font-weight:600; text-transform:uppercase;
+  text-shadow:0 0 8px rgba(41,231,201,.5);
+}
+.head-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.classroom-select{
+  background:var(--bg-panel-raised); color:var(--text-main);
+  border:1px solid var(--line); border-radius:10px;
+  padding:9px 12px; font-size:14px; font-family:'Kanit'; max-width:170px;
+}
+.save-status{font-size:11px; color:var(--text-faint); display:flex; align-items:center; gap:5px; padding:0 4px;}
+.save-status.saved{color:var(--success);}
+.save-status.pending{color:var(--accent-gold);}
+.save-status.error{color:var(--danger);}
+.dot{width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 6px currentColor;}
+
+/* ---------- BUTTONS ---------- */
+.btn{
+  border:1px solid var(--line); background:var(--bg-panel-raised); color:var(--text-main);
+  border-radius:10px; padding:9px 14px; font-size:14px; font-weight:500; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px; transition:transform .12s, box-shadow .12s, background .15s;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px); background:#352552;}
+.btn:active{transform:translateY(0px) scale(.97);}
+.btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+.btn-icon{padding:8px; width:38px; height:38px; justify-content:center;}
+.btn-sm{padding:6px 10px; font-size:12.5px; border-radius:8px;}
+.btn-pink{background:var(--accent-pink); border-color:var(--accent-pink); color:#fff; box-shadow:0 4px 14px rgba(255,46,132,.35);}
+.btn-pink:hover{background:#ff488f;}
+.btn-cyan{background:var(--accent-cyan); border-color:var(--accent-cyan); color:#08231f; box-shadow:0 4px 14px rgba(41,231,201,.3);}
+.btn-cyan:hover{background:#3ff0d8;}
+.btn-gold{background:var(--accent-gold); border-color:var(--accent-gold); color:#2c1f00; box-shadow:0 4px 14px rgba(255,198,64,.3);}
+.btn-ghost{background:transparent;}
+.btn-danger{background:transparent; color:var(--danger); border-color:rgba(255,92,92,.4);}
+.btn-danger:hover{background:rgba(255,92,92,.12);}
+
+/* ---------- HELP BANNER ---------- */
+.help-wrap{margin-top:14px;}
+.help-toggle{
+  width:100%; text-align:left; background:var(--bg-panel-soft); border:1px dashed var(--line);
+  border-radius:12px; padding:10px 14px; color:var(--text-dim); font-size:13.5px; cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.help-body{
+  display:none; background:var(--bg-panel-soft); border:1px solid var(--line); border-top:none;
+  border-radius:0 0 12px 12px; padding:14px 16px; margin-top:-1px;
+}
+.help-body.open{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px;}
+.help-step{font-size:13px; color:var(--text-dim); line-height:1.55;}
+.help-step b{color:var(--accent-cyan); display:block; font-size:12px; letter-spacing:1px; margin-bottom:3px;}
+
+/* ---------- TABS ---------- */
+.tabs{display:flex; gap:8px; margin:18px 0 14px; flex-wrap:wrap;}
+.tab{
+  flex:1; min-width:140px; background:var(--bg-panel); border:1px solid var(--line);
+  color:var(--text-dim); padding:12px 10px; border-radius:12px; font-size:14.5px; font-weight:600;
+  cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all .15s;
+}
+.tab:hover{color:var(--text-main); border-color:var(--accent-pink-dim);}
+.tab[aria-selected="true"]{
+  background:linear-gradient(180deg, var(--accent-pink), #c81f6a); color:#fff; border-color:var(--accent-pink);
+  box-shadow:0 6px 18px rgba(255,46,132,.35);
+}
+
+/* ---------- VIEWS / PANELS ---------- */
+.view{display:none;}
+.view.active{display:block; animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+.panel{
+  background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow-deep); padding:18px;
+}
+.panel + .panel{margin-top:14px;}
+.panel-title{font-size:13px; letter-spacing:1.5px; color:var(--accent-cyan); font-weight:700; text-transform:uppercase; margin:0 0 12px;}
+
+/* ---------- ROSTER ---------- */
+.roster-add-row{display:flex; gap:8px; margin-bottom:10px;}
+.text-input{
+  flex:1; background:var(--bg-panel-soft); border:1px solid var(--line); color:var(--text-main);
+  padding:10px 12px; border-radius:10px; font-size:14.5px; font-family:'Kanit';
+}
+.text-input:focus{border-color:var(--accent-cyan);}
+textarea.text-input{resize:vertical; min-height:80px; font-family:'Kanit';}
+.text-input.qty{max-width:90px; text-align:center; font-family:'Chakra Petch'; font-weight:600;}
+.hint-text{font-size:12px; color:var(--text-faint); margin:8px 0 0; line-height:1.5;}
+.bulk-row{display:flex; flex-direction:column; gap:8px;}
+.bulk-actions{display:flex; gap:8px; justify-content:flex-end;}
+
+.roster-toolbar{display:flex; justify-content:space-between; align-items:center; margin:16px 0 8px; flex-wrap:wrap; gap:8px;}
+.roster-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:420px; overflow-y:auto; padding-right:4px;}
+.roster-row{
+  display:flex; align-items:center; gap:10px; background:var(--bg-panel-soft);
+  border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+}
+.roster-no{
+  width:26px; height:26px; border-radius:50%; background:var(--bg-panel-raised); color:var(--accent-gold);
+  font-family:'Chakra Petch'; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.roster-name{flex:1; background:transparent; border:none; color:var(--text-main); font-size:14.5px; font-family:'Kanit'; padding:4px 2px; min-width:0;}
+.roster-name:focus{outline:none; border-bottom:1px solid var(--accent-cyan);}
+.roster-remove{background:transparent; border:none; color:var(--text-faint); cursor:pointer; font-size:16px; padding:4px 6px; border-radius:6px;}
+.roster-remove:hover{color:var(--danger); background:rgba(255,92,92,.12);}
+
+.stat-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px;
+  background:var(--bg-panel-soft); border:1px solid var(--line); border-radius:10px; padding:10px 14px; flex-wrap:wrap;
+}
+.stat-bar span{font-size:13.5px; color:var(--text-dim);}
+.chip{font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:999px;}
+.chip.ok{background:rgba(76,217,123,.15); color:var(--success); border:1px solid rgba(76,217,123,.4);}
+.chip.warn{background:rgba(255,198,64,.15); color:var(--accent-gold); border:1px solid rgba(255,198,64,.4);}
+
+.empty-state{text-align:center; padding:30px 10px; color:var(--text-faint); font-size:14px; line-height:1.7;}
+.empty-state .e-emoji{font-size:30px; display:block; margin-bottom:8px;}
+
+/* ---------- LAYOUT TOOLBAR ---------- */
+.layout-toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.toolbar-group{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+.size-stepper{display:flex; align-items:center; gap:6px; background:var(--bg-panel-soft); border:1px solid var(--line); border-radius:10px; padding:4px 6px;}
+.size-stepper span{font-size:13px; color:var(--text-dim); min-width:64px; text-align:center; font-family:'Chakra Petch'; font-weight:600;}
+.step-btn{width:26px; height:26px; border-radius:7px; border:1px solid var(--line); background:var(--bg-panel-raised); color:var(--text-main); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;}
+.step-btn:hover{background:#3a2a5c;}
+
+.hscroll-hint{display:none; font-size:12px; color:var(--text-faint); text-align:center; margin-bottom:8px;}
+
+/* ---------- CANVAS ---------- */
+.canvas-wrap{
+  overflow-x:auto; overflow-y:hidden; padding:18px; border-radius:14px;
+  background:
+    repeating-linear-gradient(transparent 0 3px, rgba(0,0,0,.10) 3px 4px),
+    var(--bg-panel-soft);
+  border:1px solid var(--line); box-shadow:inset 0 2px 18px rgba(0,0,0,.45);
+}
+.canvas{
+  position:relative;
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  border-radius:8px;
+}
+.item{
+  position:absolute; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:12.5px; color:var(--text-main); user-select:none; touch-action:none; cursor:grab;
+  transition:left .18s ease, top .18s ease, box-shadow .15s;
+  border:1px solid var(--line);
+}
+.item.dragging{cursor:grabbing; transition:none; z-index:50; box-shadow:0 10px 26px rgba(0,0,0,.55);}
+.item.selected{box-shadow:0 0 0 2px var(--accent-cyan), 0 8px 20px rgba(0,0,0,.4);}
+.item-board{
+  background:linear-gradient(180deg,#1c3b3a,#15302f);
+  border-color:rgba(41,231,201,.4); color:var(--accent-cyan); font-family:'Chakra Petch'; font-weight:600; letter-spacing:1px;
+}
+.item-board::after{
+  content:""; position:absolute; left:8%; right:8%; bottom:-5px; height:6px; border-radius:3px;
+  background:var(--accent-cyan); opacity:.5;
+}
+.item-board::before{
+  content:""; position:absolute; top:-5px; left:14px; width:14px; height:6px; border-radius:2px; background:var(--text-faint); opacity:.6;
+  box-shadow:calc(100% - 28px) 0 0 var(--text-faint);
+}
+.item-teacher{
+  background:linear-gradient(180deg,#3a2e10,#2c2208);
+  border-color:rgba(255,198,64,.5); color:var(--accent-gold); font-family:'Chakra Petch'; font-weight:600;
+}
+.item-desk{
+  background:var(--bg-panel-raised);
+  border-color:var(--line);
+  padding:0; overflow:hidden;
+}
+.item-label{font-size:11px; line-height:1.3; text-align:center; padding:0 4px;}
+.item-icon{font-size:18px; line-height:1;}
+.desk-badge{
+  position:absolute; top:-7px; left:-7px; background:var(--accent-gold); color:#2c1f00;
+  font-family:'Chakra Petch'; font-weight:700; font-size:10px; min-width:18px; height:18px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center; padding:0 4px; box-shadow:0 2px 6px rgba(0,0,0,.4); z-index:2;
+}
+.seat-grid{width:100%; height:100%; display:grid; gap:3px; padding:3px;}
+.seat-cell{
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:6px;
+  display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--text-faint);
+  position:relative; min-width:0; min-height:0; cursor:pointer;
+}
+.seat-cell:hover{box-shadow:0 0 0 2px var(--accent-cyan-dim);}
+.seat-cell.editing{box-shadow:0 0 0 2px var(--accent-pink); background:rgba(255,46,132,.10);}
+.seat-cell.filled{background:rgba(41,231,201,.10); border-color:rgba(41,231,201,.3);}
+.seat-cell.locked{background:rgba(255,198,64,.14); border-color:rgba(255,198,64,.5);}
+.seat-name{
+  font-size:10.5px; line-height:1.15; color:var(--text-main); text-align:center; padding:0 3px; font-weight:500;
+  overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; word-break:break-word;
+}
+.seat-empty-txt{font-size:10px; color:var(--text-faint);}
+.seat-pick{
+  width:92%; max-width:92%; font-size:10px; padding:2px; border-radius:5px; text-align:center;
+  background:var(--bg-panel-raised); color:var(--text-main); border:1px solid var(--accent-pink); font-family:'Kanit'; cursor:pointer;
+}
+.lock-btn{
+  position:absolute; top:1px; right:1px; width:16px; height:16px; border:none; background:transparent;
+  color:var(--text-faint); font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.seat-cell.locked .lock-btn{color:var(--accent-gold);}
+.seat-cell.filled:hover .lock-btn{color:var(--text-main);}
+.seat-cell.pop{animation:pop .42s ease;}
+@keyframes pop{0%{transform:scale(.78); opacity:.4;} 60%{transform:scale(1.08);} 100%{transform:scale(1); opacity:1;}}
+.seat-cell.reel .seat-name{filter:blur(.3px);}
+
+
+.ghost{
+  position:absolute; border-radius:10px; border:2px dashed var(--accent-cyan); background:rgba(41,231,201,.12);
+  pointer-events:none; display:none; z-index:40;
+}
+.ghost.invalid{border-color:var(--danger); background:rgba(255,92,92,.12);}
+
+/* ---------- DETAIL / SIDE PANEL ---------- */
+.layout-body{display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;}
+.layout-canvas-col{flex:1; min-width:280px;}
+.detail-panel{
+  width:230px; flex-shrink:0; background:var(--bg-panel-soft); border:1px solid var(--line); border-radius:12px; padding:14px;
+}
+.detail-panel h3{margin:0 0 10px; font-size:14px; color:var(--text-main); display:flex; align-items:center; gap:6px;}
+.detail-row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;}
+.detail-row span{font-size:13px; color:var(--text-dim);}
+.cap-display{font-family:'Chakra Petch'; font-weight:700; color:var(--accent-cyan); font-size:14px;}
+.cap-select{
+  background:var(--bg-panel-raised); color:var(--text-main); border:1px solid var(--line);
+  border-radius:8px; padding:5px 8px; font-size:13.5px; font-family:'Chakra Petch'; font-weight:600;
+}
+.detail-empty{color:var(--text-faint); font-size:13px; line-height:1.6;}
+
+/* ---------- SEAT VIEW EXTRAS ---------- */
+.spin-dock{
+  display:flex; align-items:center; justify-content:center; gap:18px; flex-wrap:wrap; margin:18px 0 8px; padding:18px;
+  background:radial-gradient(ellipse at center, rgba(255,46,132,.10), transparent 70%);
+  border:1px solid var(--line); border-radius:16px;
+}
+.spin-btn{
+  width:150px; height:150px; border-radius:50%; border:6px solid #7a1644;
+  background:radial-gradient(circle at 35% 30%, #ff6fb0, var(--accent-pink) 55%, #b3105c 100%);
+  color:#fff; font-family:'Chakra Petch'; font-weight:700; font-size:17px; letter-spacing:1px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer;
+  box-shadow:0 10px 0 #7a1644, 0 16px 28px rgba(255,46,132,.4);
+  transition:transform .08s;
+}
+.spin-btn .spin-emoji{font-size:30px;}
+.spin-btn:hover{filter:brightness(1.08);}
+.spin-btn:active{transform:translateY(6px); box-shadow:0 4px 0 #7a1644, 0 8px 16px rgba(255,46,132,.4);}
+.spin-btn:disabled{filter:grayscale(.6); opacity:.55; cursor:not-allowed;}
+.spin-btn:disabled:active{transform:none;}
+.spin-side{display:flex; flex-direction:column; gap:8px;}
+
+.bench{margin-top:14px;}
+.bench-title{font-size:12.5px; color:var(--text-dim); margin-bottom:8px; display:flex; align-items:center; gap:6px;}
+.bench-list{display:flex; flex-wrap:wrap; gap:8px;}
+.bench-chip{background:var(--bg-panel-soft); border:1px solid var(--accent-gold); color:var(--accent-gold); border-radius:999px; padding:6px 12px; font-size:13px;}
+
+.seat-summary{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:4px;}
+.seat-summary .s-item{font-size:12.5px; color:var(--text-dim); background:var(--bg-panel-soft); border:1px solid var(--line); border-radius:8px; padding:6px 10px;}
+
+/* ---------- TOAST ---------- */
+.toast{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--bg-panel-raised); border:1px solid var(--accent-cyan); color:var(--text-main);
+  padding:12px 20px; border-radius:12px; font-size:14px; box-shadow:0 10px 24px rgba(0,0,0,.5);
+  opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:200; max-width:90vw; text-align:center;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+footer.credit{text-align:center; color:var(--text-faint); font-size:12px; margin-top:26px;}
+
+@media (max-width:680px){
+  .hscroll-hint{display:block;}
+  .brand-title{font-size:18px;}
+  .spin-btn{width:120px; height:120px; font-size:14px;}
+  .detail-panel{width:100%;}
+}
+@media (prefers-reduced-motion: reduce){
+  .item, .view, .seat-cell.pop, .toast{transition:none !important; animation:none !important;}
+}
+
+/* print */
+@page{ size: landscape; margin: 10mm; }
+@media print{
+  body{background:#fff !important; color:#000 !important;}
+  .topbar,.tabs,.help-wrap,.layout-toolbar,.spin-dock,.toast,.detail-panel,footer.credit,.roster-toolbar,.stat-bar,.hint-text,.hscroll-hint{display:none !important;}
+  #view-seat{display:block !important;}
+  .canvas-wrap{background:#fff !important; box-shadow:none !important; border:1px solid #999; overflow:visible !important;}
+  .canvas{background-image:none !important;}
+  .item{border-color:#999 !important; color:#000 !important;}
+  .item-board,.item-teacher{background:#eee !important;}
+  .item-desk{background:#fafafa !important;}
+  .seat-name{color:#000 !important;}
+  .print-title{display:block !important; text-align:center; font-family:'Chakra Petch'; font-size:20px; margin-bottom:10px;}
+}
+.print-title{display:none;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-emoji">🕹️</div>
+      <div class="brand-text">
+        <div class="brand-title" id="classroomNameDisplay">ห้องเรียนของฉัน</div>
+        <div class="brand-sub">RANDOM SEATS · CLASSROOM ARCADE</div>
+      </div>
+    </div>
+    <div class="head-controls">
+      <select class="classroom-select" id="classroomSelect" aria-label="เลือกห้องเรียน"></select>
+      <button class="btn btn-icon" id="btnNewClassroom" title="สร้างห้องเรียนใหม่" aria-label="สร้างห้องเรียนใหม่">➕</button>
+      <button class="btn btn-icon" id="btnRenameClassroom" title="เปลี่ยนชื่อห้องเรียน" aria-label="เปลี่ยนชื่อห้องเรียน">✏️</button>
+      <button class="btn btn-icon btn-danger" id="btnDeleteClassroom" title="ลบห้องเรียนนี้" aria-label="ลบห้องเรียนนี้">🗑️</button>
+      <span class="save-status" id="saveStatus"><span class="dot"></span><span id="saveStatusText">บันทึกแล้ว</span></span>
+    </div>
+  </header>
+
+  <div class="help-wrap">
+    <button class="help-toggle" id="helpToggle">
+      <span>❓ วิธีใช้งานแบบเร็ว (3 ขั้นตอน)</span><span id="helpArrow">▾</span>
+    </button>
+    <div class="help-body" id="helpBody">
+      <div class="help-step"><b>ขั้นที่ 1</b>ไปแท็บ "รายชื่อนักเรียน" แล้วพิมพ์หรือวางรายชื่อทีละบรรทัด</div>
+      <div class="help-step"><b>ขั้นที่ 2</b>ไปแท็บ "ผังห้องเรียน" ลากกระดาน โต๊ะครู และโต๊ะนักเรียนให้ตรงกับห้องจริง</div>
+      <div class="help-step"><b>ขั้นที่ 3</b>ไปแท็บ "สุ่มที่นั่ง" กด SPIN เพื่อสุ่ม หรือแตะที่นั่งใดก็ได้เพื่อเลือกนักเรียนเองตรงนั้น ล็อกที่นั่งที่ไม่อยากให้สุ่มทับได้</div>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="เมนูหลัก">
+    <button class="tab" role="tab" id="tabbtn-roster" aria-selected="true" data-view="roster">👥 รายชื่อนักเรียน</button>
+    <button class="tab" role="tab" id="tabbtn-layout" aria-selected="false" data-view="layout">🗺️ ผังห้องเรียน</button>
+    <button class="tab" role="tab" id="tabbtn-seat" aria-selected="false" data-view="seat">🎯 สุ่มที่นั่ง</button>
+  </nav>
+
+  <main id="views">
+
+    <!-- ROSTER VIEW -->
+    <section class="view active" id="view-roster" role="tabpanel" aria-labelledby="tabbtn-roster">
+      <div class="panel">
+        <div class="panel-title">เพิ่มนักเรียนทีละคน</div>
+        <div class="roster-add-row">
+          <input type="text" class="text-input" id="singleNameInput" placeholder="พิมพ์ชื่อนักเรียน แล้วกด Enter">
+          <button class="btn btn-pink" id="btnAddSingle">➕ เพิ่ม</button>
+        </div>
+
+        <div class="panel-title" style="margin-top:18px;">เพิ่มหลายคนพร้อมกัน (วางทีละบรรทัด)</div>
+        <div class="bulk-row">
+          <textarea class="text-input" id="bulkNameInput" placeholder="เด็กชายสมชาย ใจดี
+เด็กหญิงสมหญิง รักเรียน
+..."></textarea>
+          <div class="bulk-actions">
+            <button class="btn btn-ghost" id="btnClearBulk">ล้างกล่องนี้</button>
+            <button class="btn btn-cyan" id="btnAddBulk">📋 เพิ่มทั้งหมด</button>
+          </div>
+        </div>
+
+        <div class="panel-title" style="margin-top:18px;">สร้างรายชื่อให้เร็ว (ห้องที่มีนักเรียน 20–50 คน)</div>
+        <div class="roster-add-row">
+          <input type="number" class="text-input qty" id="quickCountInput" min="20" max="50" step="1" value="30" aria-label="จำนวนนักเรียน 20 ถึง 50 คน">
+          <button class="btn btn-gold" id="btnQuickGenerate">🎲 สร้างรายชื่ออัตโนมัติ</button>
+        </div>
+        <p class="hint-text">ระบบจะเติมชื่อ "นักเรียนคนที่ 1, 2, 3…" ให้ก่อน แล้วครูค่อยแก้เป็นชื่อจริงทีหลังได้ในรายการด้านล่าง</p>
+      </div>
+
+      <div class="panel">
+        <div class="roster-toolbar">
+          <div class="panel-title" style="margin:0;">รายชื่อนักเรียนในห้องนี้</div>
+          <div class="toolbar-group">
+            <button class="btn btn-sm btn-ghost" id="btnSortAlpha">เรียง ก-ฮ</button>
+            <button class="btn btn-sm btn-danger" id="btnClearAllStudents">ล้างรายชื่อทั้งหมด</button>
+          </div>
+        </div>
+        <ul class="roster-list" id="rosterList"></ul>
+        <div class="empty-state" id="rosterEmpty" style="display:none;">
+          <span class="e-emoji">🎮</span>
+          ยังไม่มีชื่อนักเรียน — พิมพ์หรือวางรายชื่อด้านบนเพื่อเริ่มเกม
+        </div>
+        <div class="stat-bar">
+          <span id="studentCountText">นักเรียนทั้งหมด: 0 คน</span>
+          <span id="seatCountText">ที่นั่งทั้งหมด: 0 ที่</span>
+          <span class="chip ok" id="seatStatusChip">เพิ่มโต๊ะในแท็บผังห้องเรียน</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LAYOUT VIEW -->
+    <section class="view" id="view-layout" role="tabpanel" aria-labelledby="tabbtn-layout">
+      <div class="panel">
+        <div class="layout-toolbar">
+          <div class="toolbar-group">
+            <button class="btn btn-cyan btn-sm" id="btnAddBoard">➕ กระดาน</button>
+            <button class="btn btn-gold btn-sm" id="btnAddTeacher">➕ โต๊ะครู</button>
+            <button class="btn btn-pink btn-sm" id="btnAddDesk">➕ โต๊ะนักเรียน</button>
+            <button class="btn btn-sm btn-danger" id="btnDeleteSelected" disabled>🗑️ ลบที่เลือก</button>
+          </div>
+          <div class="toolbar-group">
+            <div class="size-stepper" aria-label="จำนวนคอลัมน์">
+              <button class="step-btn" id="colsMinus">−</button>
+              <span id="colsLabel">10 คอลัมน์</span>
+              <button class="step-btn" id="colsPlus">+</button>
+            </div>
+            <div class="size-stepper" aria-label="จำนวนแถว">
+              <button class="step-btn" id="rowsMinus">−</button>
+              <span id="rowsLabel">6 แถว</span>
+              <button class="step-btn" id="rowsPlus">+</button>
+            </div>
+          </div>
+        </div>
+        <p class="hscroll-hint">↔️ เลื่อนซ้าย-ขวาเพื่อดูผังห้องทั้งหมด</p>
+        <div class="layout-body">
+          <div class="layout-canvas-col">
+            <div class="canvas-wrap">
+              <div class="canvas" id="layoutCanvas"></div>
+            </div>
+          </div>
+          <div class="detail-panel" id="detailPanel">
+            <h3>🔧 รายละเอียด</h3>
+            <div class="detail-empty">แตะที่กระดาน โต๊ะครู หรือโต๊ะนักเรียน เพื่อแก้ไข เช่น เปลี่ยนจำนวนที่นั่ง หรือลบออก<br><br>ลากของแต่ละชิ้นด้วยเมาส์หรือนิ้วเพื่อย้ายตำแหน่งได้เลย</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEAT VIEW -->
+    <section class="view" id="view-seat" role="tabpanel" aria-labelledby="tabbtn-seat">
+      <h2 class="print-title" id="printTitle">ผังที่นั่ง</h2>
+      <div class="panel">
+        <div class="seat-summary" id="seatSummary"></div>
+        <p class="hint-text" style="text-align:center; margin-top:0;">👆 แตะที่นั่งใดก็ได้เพื่อเลือก/เปลี่ยนนักเรียนเอง — ที่นั่งที่จัดเองจะถูกล็อกให้อัตโนมัติ</p>
+        <p class="hscroll-hint">↔️ เลื่อนซ้าย-ขวาเพื่อดูผังห้องทั้งหมด</p>
+        <div class="canvas-wrap">
+          <div class="canvas" id="seatCanvas"></div>
+        </div>
+        <div class="bench" id="benchWrap" style="display:none;">
+          <div class="bench-title">🪑 รอที่นั่ง (ที่นั่งไม่พอ)</div>
+          <div class="bench-list" id="benchList"></div>
+        </div>
+      </div>
+
+      <div class="spin-dock">
+        <button class="spin-btn" id="btnSpin">
+          <span class="spin-emoji">🎰</span><span>SPIN</span><span style="font-size:11px; font-weight:400; opacity:.85;">สุ่มที่นั่ง</span>
+        </button>
+        <div class="spin-side">
+          <button class="btn btn-ghost btn-sm" id="btnUnlockAll">🔓 ปลดล็อกทั้งหมด</button>
+          <button class="btn btn-ghost btn-sm" id="btnClearSeats">🧹 ล้างที่นั่งทั้งหมด</button>
+          <button class="btn btn-ghost btn-sm" id="btnPrint">🖨️ พิมพ์ผังที่นั่ง</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="credit">ระบบจัดโต๊ะเรียน · ข้อมูลถูกบันทึกอัตโนมัติในเบราว์เซอร์นี้สำหรับห้องเรียนนี้</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== STORAGE COMPATIBILITY LAYER =====================
+   Inside Claude.ai, window.storage is provided automatically.
+   Outside Claude.ai (hosted on GitHub Pages / Netlify / embedded in a
+   Canva Site, etc.) that API doesn't exist, so we provide an equivalent
+   polyfill backed by the browser's own localStorage. Same method names,
+   same async Promise shape, same "get() rejects on missing key" behavior
+   — so the rest of the app needs zero changes either way. */
+if(!window.storage){
+  (function(){
+    var PREFIX = 'rsca:';
+    window.storage = {
+      get: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var raw = localStorage.getItem(PREFIX+key);
+            if(raw===null){ reject(new Error('Key not found: '+key)); return; }
+            resolve({ key:key, value:raw, shared:!!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      set: function(key, value, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            localStorage.setItem(PREFIX+key, value);
+            resolve({ key:key, value:value, shared:!!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      delete: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            localStorage.removeItem(PREFIX+key);
+            resolve({ key:key, deleted:true, shared:!!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      list: function(prefix, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var keys = [];
+            for(var i=0;i<localStorage.length;i++){
+              var k = localStorage.key(i);
+              if(k.indexOf(PREFIX)===0){
+                var real = k.slice(PREFIX.length);
+                if(!prefix || real.indexOf(prefix)===0) keys.push(real);
+              }
+            }
+            resolve({ keys:keys, prefix:prefix, shared:!!shared });
+          }catch(e){ reject(e); }
+        });
+      }
+    };
+  })();
+}
+
+/* ===================== CONSTANTS ===================== */
+var CELL = 58, GAP = 8;
+var MIN_COLS=4, MAX_COLS=20, MIN_ROWS=3, MAX_ROWS=20;
+var CAP_SHAPE={
+  1:{w:1,h:1}, 2:{w:2,h:1}, 3:{w:3,h:1}, 4:{w:2,h:2},
+  5:{w:3,h:2}, 6:{w:3,h:2}, 7:{w:4,h:2}, 8:{w:4,h:2}
+};
+var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===================== STATE ===================== */
+var state = null;          // current classroom data
+var currentView = 'roster';
+var drag = null;
+var editingSeatKey = null;
+var saveTimer = null;
+
+/* ===================== UTIL ===================== */
+function uid(){ return 'i_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function genClassroomId(){ return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function shuffleArray(arr){
+  var a = arr.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+  return a;
+}
+function seatKey(itemId, seatIdx){ return itemId + ':' + seatIdx; }
+function cellX(col){ return col*(CELL+GAP); }
+function cellY(row){ return row*(CELL+GAP); }
+function boxW(w){ return w*CELL + (w-1)*GAP; }
+function boxH(h){ return h*CELL + (h-1)*GAP; }
+function totalW(cols){ return cols*CELL + (cols-1)*GAP; }
+function totalH(rows){ return rows*CELL + (rows-1)*GAP; }
+
+var toastTimer = null;
+function toast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2600);
+}
+
+function debounce(fn, ms){
+  var t;
+  return function(){
+    var args = arguments;
+    clearTimeout(t);
+    t = setTimeout(function(){ fn.apply(null,args); }, ms);
+  };
+}
+
+/* ===================== DEFAULT CLASSROOM ===================== */
+function defaultClassroom(name){
+  var cols=10, rows=6;
+  var boardW = Math.min(4, cols);
+  var items = [
+    { id: uid(), type:'board', col: Math.floor((cols-boardW)/2), row:0, w:boardW, h:1 },
+    { id: uid(), type:'teacher', col: cols-1, row:0, w:1, h:1 }
+  ];
+  return {
+    id: genClassroomId(),
+    name: name || 'ห้องเรียนของฉัน',
+    cols: cols, rows: rows,
+    items: items,
+    students: [],
+    assignment: {},
+    locks: {}
+  };
+}
+
+/* ===================== PERSISTENCE ===================== */
+function setSaveStatus(status){
+  var el = document.getElementById('saveStatus');
+  var txt = document.getElementById('saveStatusText');
+  el.className = 'save-status ' + status;
+  if(status==='saved') txt.textContent='บันทึกแล้ว';
+  else if(status==='pending') txt.textContent='มีการเปลี่ยนแปลง…';
+  else if(status==='saving') txt.textContent='กำลังบันทึก…';
+  else if(status==='error') txt.textContent='บันทึกไม่สำเร็จ';
+}
+
+function markDirty(){
+  setSaveStatus('pending');
+  scheduleSave();
+}
+var scheduleSave = debounce(persistCurrent, 800);
+
+function persistCurrent(){
+  if(!state) return;
+  setSaveStatus('saving');
+  var data = {
+    name: state.name, cols: state.cols, rows: state.rows,
+    items: state.items, students: state.students,
+    assignment: state.assignment, locks: state.locks
+  };
+  var payload = JSON.stringify(data);
+  Promise.resolve()
+    .then(function(){ return window.storage.set('croom:' + state.id, payload); })
+    .then(function(){ return window.storage.get('croom:index'); })
+    .catch(function(){ return null; })
+    .then(function(res){
+      var idx = [];
+      try{ idx = res && res.value ? JSON.parse(res.value) : []; }catch(e){ idx=[]; }
+      var i = idx.findIndex(function(c){ return c.id===state.id; });
+      var entry = { id: state.id, name: state.name, updatedAt: Date.now() };
+      if(i>=0) idx[i]=entry; else idx.push(entry);
+      return window.storage.set('croom:index', JSON.stringify(idx));
+    })
+    .then(function(){ return window.storage.set('croom:last', state.id); })
+    .then(function(){ setSaveStatus('saved'); })
+    .catch(function(err){ console.error(err); setSaveStatus('error'); toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); });
+}
+
+function loadIndex(){
+  return window.storage.get('croom:index')
+    .then(function(r){ try{ return r && r.value ? JSON.parse(r.value) : []; }catch(e){ return []; } })
+    .catch(function(){ return []; });
+}
+function loadClassroomData(id){
+  return window.storage.get('croom:' + id)
+    .then(function(r){ try{ return r && r.value ? JSON.parse(r.value) : null; }catch(e){ return null; } })
+    .catch(function(){ return null; });
+}
+function deleteClassroomStorage(id){
+  return window.storage.delete('croom:' + id).catch(function(){ return null; });
+}
+
+/* ===================== INIT / CLASSROOM SWITCH ===================== */
+function applyClassroomData(id, data){
+  state = {
+    id: id,
+    name: data.name || 'ห้องเรียนของฉัน',
+    cols: data.cols || 10,
+    rows: data.rows || 6,
+    items: data.items || [],
+    students: data.students || [],
+    assignment: data.assignment || {},
+    locks: data.locks || {},
+    selectedId: null,
+    waiting: []
+  };
+}
+
+function startNewClassroom(name, persist){
+  var def = defaultClassroom(name);
+  state = {
+    id: def.id, name: def.name, cols: def.cols, rows: def.rows,
+    items: def.items, students: def.students, assignment: def.assignment, locks: def.locks,
+    selectedId: null, waiting: []
+  };
+  if(persist!==false) markDirty();
+}
+
+function refreshClassroomSelect(idx, selectedId){
+  var sel = document.getElementById('classroomSelect');
+  sel.innerHTML = '';
+  idx.slice().sort(function(a,b){ return b.updatedAt-a.updatedAt; }).forEach(function(c){
+    var opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    if(c.id===selectedId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function switchToClassroom(id){
+  loadClassroomData(id).then(function(data){
+    if(!data){ toast('ไม่พบข้อมูลห้องเรียนนี้'); return; }
+    applyClassroomData(id, data);
+    window.storage.set('croom:last', id).catch(function(){});
+    setSaveStatus('saved');
+    renderAll();
+  });
+}
+
+function boot(){
+  loadIndex().then(function(idx){
+    if(idx.length===0){
+      startNewClassroom(null, true);
+      refreshClassroomSelect([{id:state.id, name:state.name, updatedAt:Date.now()}], state.id);
+      renderAll();
+      return;
+    }
+    return window.storage.get('croom:last').catch(function(){ return null; }).then(function(lastRes){
+      var lastId = lastRes && lastRes.value ? lastRes.value : idx[idx.length-1].id;
+      var exists = idx.some(function(c){ return c.id===lastId; });
+      var useId = exists ? lastId : idx[idx.length-1].id;
+      return loadClassroomData(useId).then(function(data){
+        if(!data){ startNewClassroom(null, true); }
+        else { applyClassroomData(useId, data); }
+        refreshClassroomSelect(idx, state.id);
+        setSaveStatus('saved');
+        renderAll();
+      });
+    });
+  }).catch(function(err){
+    console.error(err);
+    startNewClassroom(null, false);
+    renderAll();
+  });
+}
+
+/* ===================== CLASSROOM MANAGEMENT ACTIONS ===================== */
+document.getElementById('btnNewClassroom').addEventListener('click', function(){
+  var name = prompt('ตั้งชื่อห้องเรียนใหม่ เช่น ป.4/2', 'ห้องเรียนใหม่');
+  if(name===null) return;
+  name = name.trim() || 'ห้องเรียนใหม่';
+  startNewClassroom(name, true);
+  loadIndex().then(function(idx){
+    idx.push({id:state.id, name:state.name, updatedAt:Date.now()});
+    refreshClassroomSelect(idx, state.id);
+  });
+  renderAll();
+  toast('สร้างห้องเรียนใหม่แล้ว 🎉');
+});
+
+document.getElementById('btnRenameClassroom').addEventListener('click', function(){
+  var name = prompt('เปลี่ยนชื่อห้องเรียน', state.name);
+  if(name===null) return;
+  name = name.trim();
+  if(!name) return;
+  state.name = name;
+  markDirty();
+  document.getElementById('classroomNameDisplay').textContent = name;
+  var opt = document.querySelector('#classroomSelect option[value="'+state.id+'"]');
+  if(opt) opt.textContent = name;
+});
+
+document.getElementById('btnDeleteClassroom').addEventListener('click', function(){
+  if(!confirm('ลบห้องเรียน "'+state.name+'" ใช่หรือไม่? ข้อมูลทั้งหมดของห้องนี้จะหายไป')) return;
+  var deletingId = state.id;
+  deleteClassroomStorage(deletingId).then(function(){
+    return loadIndex();
+  }).then(function(idx){
+    idx = idx.filter(function(c){ return c.id!==deletingId; });
+    return window.storage.set('croom:index', JSON.stringify(idx)).then(function(){ return idx; });
+  }).then(function(idx){
+    if(idx.length===0){
+      startNewClassroom(null, true);
+      refreshClassroomSelect([{id:state.id,name:state.name,updatedAt:Date.now()}], state.id);
+    } else {
+      var next = idx.slice().sort(function(a,b){return b.updatedAt-a.updatedAt;})[0];
+      return loadClassroomData(next.id).then(function(data){
+        applyClassroomData(next.id, data || {});
+        refreshClassroomSelect(idx, next.id);
+      });
+    }
+  }).then(function(){
+    renderAll();
+    toast('ลบห้องเรียนแล้ว');
+  }).catch(function(err){ console.error(err); toast('ลบไม่สำเร็จ'); });
+});
+
+document.getElementById('classroomSelect').addEventListener('change', function(e){
+  switchToClassroom(e.target.value);
+});
+
+/* ===================== TABS ===================== */
+var views = ['roster','layout','seat'];
+views.forEach(function(v){
+  document.getElementById('tabbtn-'+v).addEventListener('click', function(){ setView(v); });
+});
+function setView(v){
+  currentView = v;
+  if(v!=='seat') editingSeatKey = null;
+  views.forEach(function(name){
+    document.getElementById('tabbtn-'+name).setAttribute('aria-selected', name===v ? 'true':'false');
+    document.getElementById('view-'+name).classList.toggle('active', name===v);
+  });
+  render();
+}
+
+document.getElementById('helpToggle').addEventListener('click', function(){
+  var body = document.getElementById('helpBody');
+  var open = body.classList.toggle('open');
+  document.getElementById('helpArrow').textContent = open ? '▴' : '▾';
+});
+
+/* ===================== ROSTER LOGIC ===================== */
+function addStudent(name){
+  name = (name||'').trim();
+  if(!name) return false;
+  state.students.push({ id: uid(), name: name });
+  return true;
+}
+function removeStudentRefs(studentId){
+  Object.keys(state.assignment).forEach(function(k){
+    if(state.assignment[k]===studentId) delete state.assignment[k];
+  });
+  Object.keys(state.locks).forEach(function(k){
+    if(state.locks[k]===studentId) delete state.locks[k];
+  });
+}
+
+document.getElementById('btnAddSingle').addEventListener('click', function(){
+  var input = document.getElementById('singleNameInput');
+  if(addStudent(input.value)){
+    input.value='';
+    input.focus();
+    markDirty();
+    renderRoster();
+  }
+});
+document.getElementById('singleNameInput').addEventListener('keydown', function(e){
+  if(e.key==='Enter'){ document.getElementById('btnAddSingle').click(); }
+});
+document.getElementById('btnAddBulk').addEventListener('click', function(){
+  var ta = document.getElementById('bulkNameInput');
+  var lines = ta.value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+  if(lines.length===0){ toast('ยังไม่มีรายชื่อในกล่องนี้'); return; }
+  lines.forEach(function(n){ addStudent(n); });
+  ta.value='';
+  markDirty();
+  renderRoster();
+  toast('เพิ่มนักเรียน ' + lines.length + ' คนแล้ว 🎉');
+});
+document.getElementById('btnClearBulk').addEventListener('click', function(){
+  document.getElementById('bulkNameInput').value='';
+});
+document.getElementById('btnQuickGenerate').addEventListener('click', function(){
+  var input = document.getElementById('quickCountInput');
+  var n = parseInt(input.value, 10);
+  if(isNaN(n)) n = 30;
+  var clamped = clamp(n, 20, 50);
+  if(clamped !== n) toast('ปรับจำนวนให้อยู่ในช่วง 20–50 คน');
+  input.value = clamped;
+  var startNo = state.students.length;
+  for(var i=1;i<=clamped;i++){ addStudent('นักเรียนคนที่ ' + (startNo+i)); }
+  markDirty();
+  renderRoster();
+  toast('สร้างรายชื่อ ' + clamped + ' คนแล้ว — กดที่ชื่อเพื่อแก้เป็นชื่อจริงได้เลย');
+});
+document.getElementById('btnSortAlpha').addEventListener('click', function(){
+  state.students.sort(function(a,b){ return a.name.localeCompare(b.name,'th'); });
+  markDirty();
+  renderRoster();
+});
+document.getElementById('btnClearAllStudents').addEventListener('click', function(){
+  if(state.students.length===0) return;
+  if(!confirm('ล้างรายชื่อนักเรียนทั้งหมดในห้องนี้ใช่หรือไม่?')) return;
+  state.students = [];
+  state.assignment = {};
+  state.locks = {};
+  markDirty();
+  renderRoster();
+  renderSeatView();
+});
+
+function renderRoster(){
+  var list = document.getElementById('rosterList');
+  var empty = document.getElementById('rosterEmpty');
+  list.innerHTML='';
+  if(state.students.length===0){
+    empty.style.display='block';
+  } else {
+    empty.style.display='none';
+    state.students.forEach(function(st, i){
+      var li = document.createElement('li');
+      li.className='roster-row';
+      li.innerHTML =
+        '<span class="roster-no">'+(i+1)+'</span>'+
+        '<input class="roster-name" type="text" value="'+escapeHtml(st.name)+'" data-id="'+st.id+'">'+
+        '<button class="roster-remove" data-id="'+st.id+'" aria-label="ลบนักเรียนคนนี้">✕</button>';
+      list.appendChild(li);
+    });
+  }
+  list.querySelectorAll('.roster-name').forEach(function(inp){
+    inp.addEventListener('change', function(){
+      var st = state.students.find(function(s){ return s.id===inp.dataset.id; });
+      if(st){ st.name = inp.value.trim() || st.name; inp.value = st.name; markDirty(); }
+    });
+  });
+  list.querySelectorAll('.roster-remove').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.dataset.id;
+      state.students = state.students.filter(function(s){ return s.id!==id; });
+      removeStudentRefs(id);
+      markDirty();
+      renderRoster();
+    });
+  });
+
+  var seats = getAllSeats().length;
+  document.getElementById('studentCountText').textContent = 'นักเรียนทั้งหมด: ' + state.students.length + ' คน';
+  document.getElementById('seatCountText').textContent = 'ที่นั่งทั้งหมด: ' + seats + ' ที่';
+  var chip = document.getElementById('seatStatusChip');
+  if(seats===0){
+    chip.className='chip warn'; chip.textContent='ยังไม่มีโต๊ะ — ไปที่แท็บ "ผังห้องเรียน"';
+  } else if(state.students.length>seats){
+    chip.className='chip warn'; chip.textContent='ที่นั่งไม่พอ ขาดอีก ' + (state.students.length-seats) + ' ที่';
+  } else {
+    chip.className='chip ok'; chip.textContent='ที่นั่งพอ (' + state.students.length + '/' + seats + ')';
+  }
+}
+
+/* ===================== LAYOUT: GEOMETRY HELPERS ===================== */
+function rectOverlap(a,b){
+  return !(a.col+a.w<=b.col || b.col+b.w<=a.col || a.row+a.h<=b.row || b.row+b.h<=a.row);
+}
+function overlapsOthers(item, col, row, w, h){
+  var test = {col:col,row:row,w:w,h:h};
+  return state.items.some(function(o){
+    if(o.id===item.id) return false;
+    return rectOverlap(test, o);
+  });
+}
+function isValidPlacement(item, col, row, w, h){
+  w = w||item.w; h = h||item.h;
+  if(col<0 || row<0 || col+w>state.cols || row+h>state.rows) return false;
+  return !overlapsOthers(item, col, row, w, h);
+}
+function findFreeSpot(w,h){
+  for(var r=0;r<=state.rows-h;r++){
+    for(var c=0;c<=state.cols-w;c++){
+      if(!overlapsOthers({id:'__none__'}, c, r, w, h)) return {col:c,row:r};
+    }
+  }
+  return null;
+}
+
+/* ===================== LAYOUT: ADD / DELETE / CAPACITY ===================== */
+document.getElementById('btnAddBoard').addEventListener('click', function(){
+  var existing = state.items.find(function(i){ return i.type==='board'; });
+  if(existing){
+    toast('มีกระดานอยู่แล้ว — ลากชิ้นที่ไฮไลต์ไว้เพื่อย้ายตำแหน่งได้เลย');
+    state.selectedId = existing.id;
+    renderLayoutView();
+    focusItemEl(existing.id);
+    return;
+  }
+  var w = Math.min(4, state.cols);
+  var spot = findFreeSpot(w,1);
+  if(!spot){ toast('พื้นที่ไม่พอ ลองเพิ่มคอลัมน์หรือแถวก่อน'); return; }
+  var item = {id:uid(), type:'board', col:spot.col, row:spot.row, w:w, h:1};
+  state.items.push(item);
+  state.selectedId = item.id;
+  markDirty();
+  renderLayoutView();
+});
+document.getElementById('btnAddTeacher').addEventListener('click', function(){
+  var existing = state.items.find(function(i){ return i.type==='teacher'; });
+  if(existing){
+    toast('มีโต๊ะครูอยู่แล้ว — ลากชิ้นที่ไฮไลต์ไว้เพื่อย้ายตำแหน่งได้เลย');
+    state.selectedId = existing.id;
+    renderLayoutView();
+    focusItemEl(existing.id);
+    return;
+  }
+  var spot = findFreeSpot(1,1);
+  if(!spot){ toast('พื้นที่ไม่พอ ลองเพิ่มคอลัมน์หรือแถวก่อน'); return; }
+  var item = {id:uid(), type:'teacher', col:spot.col, row:spot.row, w:1, h:1};
+  state.items.push(item);
+  state.selectedId = item.id;
+  markDirty();
+  renderLayoutView();
+});
+document.getElementById('btnAddDesk').addEventListener('click', function(){
+  var spot = findFreeSpot(1,1);
+  if(!spot){ toast('พื้นที่ไม่พอ ลองเพิ่มคอลัมน์หรือแถวก่อน'); return; }
+  var item = {id:uid(), type:'desk', col:spot.col, row:spot.row, w:1, h:1, capacity:1};
+  state.items.push(item);
+  state.selectedId = item.id;
+  markDirty();
+  renderLayoutView();
+});
+document.getElementById('btnDeleteSelected').addEventListener('click', function(){
+  deleteSelectedItem();
+});
+
+function deleteSelectedItem(){
+  if(!state.selectedId) return;
+  var item = state.items.find(function(i){ return i.id===state.selectedId; });
+  if(!item) return;
+  if(item.type==='desk'){
+    for(var s=0;s<item.capacity;s++){
+      delete state.assignment[seatKey(item.id,s)];
+      delete state.locks[seatKey(item.id,s)];
+    }
+  }
+  state.items = state.items.filter(function(i){ return i.id!==item.id; });
+  state.selectedId = null;
+  markDirty();
+  renderLayoutView();
+}
+
+function setCapacity(item, newCap){
+  newCap = clamp(newCap, 1, 8);
+  if(newCap === item.capacity) return;
+  var shape = CAP_SHAPE[newCap];
+  if(!isValidPlacement(item, item.col, item.row, shape.w, shape.h)){
+    toast('ตั้งจำนวนที่นั่งนี้ไม่ได้ — พื้นที่ไม่พอ ลองย้ายตำแหน่งหรือขยายผังห้องก่อน');
+    renderLayoutView();
+    return;
+  }
+  for(var s=newCap; s<item.capacity; s++){
+    delete state.assignment[seatKey(item.id,s)];
+    delete state.locks[seatKey(item.id,s)];
+  }
+  item.capacity = newCap;
+  item.w = shape.w;
+  item.h = shape.h;
+  markDirty();
+  renderLayoutView();
+}
+
+/* ===================== LAYOUT: GRID SIZE ===================== */
+function changeCols(delta){
+  var next = clamp(state.cols+delta, MIN_COLS, MAX_COLS);
+  if(next===state.cols) return;
+  if(next<state.cols){
+    var blocked = state.items.some(function(i){ return i.col+i.w>next; });
+    if(blocked){ toast('ลดคอลัมน์ไม่ได้ มีของอยู่นอกขอบเขต — ย้ายก่อนแล้วลองใหม่'); return; }
+  }
+  state.cols = next;
+  markDirty();
+  renderLayoutView();
+}
+function changeRows(delta){
+  var next = clamp(state.rows+delta, MIN_ROWS, MAX_ROWS);
+  if(next===state.rows) return;
+  if(next<state.rows){
+    var blocked = state.items.some(function(i){ return i.row+i.h>next; });
+    if(blocked){ toast('ลดแถวไม่ได้ มีของอยู่นอกขอบเขต — ย้ายก่อนแล้วลองใหม่'); return; }
+  }
+  state.rows = next;
+  markDirty();
+  renderLayoutView();
+}
+document.getElementById('colsPlus').addEventListener('click', function(){ changeCols(1); });
+document.getElementById('colsMinus').addEventListener('click', function(){ changeCols(-1); });
+document.getElementById('rowsPlus').addEventListener('click', function(){ changeRows(1); });
+document.getElementById('rowsMinus').addEventListener('click', function(){ changeRows(-1); });
+
+/* ===================== LAYOUT: SELECTION & KEYBOARD ===================== */
+function selectItem(id){
+  state.selectedId = (state.selectedId===id) ? null : id;
+  renderLayoutView();
+}
+document.addEventListener('keydown', function(e){
+  if(currentView!=='layout' || !state || !state.selectedId) return;
+  var tag = (document.activeElement && document.activeElement.tagName) || '';
+  if(tag==='INPUT' || tag==='TEXTAREA') return;
+  var item = state.items.find(function(i){ return i.id===state.selectedId; });
+  if(!item) return;
+  var d = null;
+  if(e.key==='ArrowUp') d={dc:0,dr:-1};
+  else if(e.key==='ArrowDown') d={dc:0,dr:1};
+  else if(e.key==='ArrowLeft') d={dc:-1,dr:0};
+  else if(e.key==='ArrowRight') d={dc:1,dr:0};
+  else if(e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); deleteSelectedItem(); return; }
+  else if(e.key==='Escape'){ state.selectedId=null; renderLayoutView(); return; }
+  if(d){
+    e.preventDefault();
+    var nc = item.col+d.dc, nr = item.row+d.dr;
+    if(isValidPlacement(item, nc, nr)){ item.col=nc; item.row=nr; markDirty(); renderLayoutView(); }
+  }
+});
+
+/* ===================== LAYOUT: RENDERING ===================== */
+function deskNumbers(){
+  var desks = state.items.filter(function(i){ return i.type==='desk'; })
+    .slice().sort(function(a,b){ return (a.row-b.row) || (a.col-b.col); });
+  var map = {};
+  desks.forEach(function(d,i){ map[d.id]=i+1; });
+  return map;
+}
+
+function setupCanvasBase(canvasEl, cols, rows){
+  canvasEl.style.width = totalW(cols)+'px';
+  canvasEl.style.height = totalH(rows)+'px';
+  canvasEl.style.backgroundSize = (CELL+GAP)+'px '+(CELL+GAP)+'px';
+}
+
+function itemInnerHtmlEdit(item, deskNo){
+  if(item.type==='board'){
+    return '<div class="item-label">🖥️<br>กระดาน</div>';
+  }
+  if(item.type==='teacher'){
+    return '<div class="item-icon">🧑‍🏫</div><div class="item-label">โต๊ะครู</div>';
+  }
+  var shape = CAP_SHAPE[item.capacity];
+  var cellsHtml = '';
+  for(var s=0;s<item.capacity;s++){
+    cellsHtml += '<div class="seat-cell"><span>🪑</span></div>';
+  }
+  return '<span class="desk-badge">'+deskNo+'</span>'+
+    '<div class="seat-grid" style="grid-template-columns:repeat('+shape.w+',1fr);grid-template-rows:repeat('+shape.h+',1fr);">'+cellsHtml+'</div>';
+}
+
+function renderLayoutView(){
+  var canvas = document.getElementById('layoutCanvas');
+  setupCanvasBase(canvas, state.cols, state.rows);
+  canvas.innerHTML = '';
+
+  var ghost = document.createElement('div');
+  ghost.className = 'ghost';
+  ghost.id = 'dragGhost';
+  canvas.appendChild(ghost);
+
+  var deskNos = deskNumbers();
+
+  state.items.forEach(function(item){
+    var el = document.createElement('div');
+    el.className = 'item item-'+item.type + (item.id===state.selectedId ? ' selected':'');
+    el.style.left = cellX(item.col)+'px';
+    el.style.top = cellY(item.row)+'px';
+    el.style.width = boxW(item.w)+'px';
+    el.style.height = boxH(item.h)+'px';
+    el.dataset.id = item.id;
+    el.innerHTML = itemInnerHtmlEdit(item, deskNos[item.id]);
+    attachDragHandlers(el, item);
+    canvas.appendChild(el);
+  });
+
+  document.getElementById('colsLabel').textContent = state.cols + ' คอลัมน์';
+  document.getElementById('rowsLabel').textContent = state.rows + ' แถว';
+
+  renderDetailPanel();
+}
+
+function renderDetailPanel(){
+  var panel = document.getElementById('detailPanel');
+  var del = document.getElementById('btnDeleteSelected');
+  var item = state.items.find(function(i){ return i.id===state.selectedId; });
+  if(!item){
+    del.disabled = true;
+    panel.innerHTML = '<h3>🔧 รายละเอียด</h3><div class="detail-empty">แตะที่กระดาน โต๊ะครู หรือโต๊ะนักเรียน เพื่อแก้ไข เช่น เปลี่ยนจำนวนที่นั่ง หรือลบออก<br><br>ลากของแต่ละชิ้นด้วยเมาส์หรือนิ้วเพื่อย้ายตำแหน่งได้เลย</div>';
+    return;
+  }
+  del.disabled = false;
+  var typeLabel = item.type==='board' ? 'กระดานหน้าห้อง' : item.type==='teacher' ? 'โต๊ะครู' : 'โต๊ะนักเรียน';
+  var html = '<h3>🔧 รายละเอียด</h3>';
+  html += '<div class="detail-row"><span>ประเภท</span><b>'+typeLabel+'</b></div>';
+  html += '<div class="detail-row"><span>ตำแหน่ง</span><span>คอลัมน์ '+(item.col+1)+', แถว '+(item.row+1)+'</span></div>';
+  if(item.type==='desk'){
+    var capOptions = '';
+    for(var c=1;c<=8;c++){
+      capOptions += '<option value="'+c+'"'+(c===item.capacity?' selected':'')+'>'+c+' ที่</option>';
+    }
+    html += '<div class="detail-row"><span>จำนวนที่นั่ง</span><select id="capSelect" class="cap-select">'+capOptions+'</select></div>';
+  }
+  html += '<button class="btn btn-danger btn-sm" id="btnDetailDelete" style="width:100%; justify-content:center;">🗑️ ลบออกจากผัง</button>';
+  panel.innerHTML = html;
+  var capSelect = document.getElementById('capSelect');
+  if(capSelect) capSelect.addEventListener('change', function(){ setCapacity(item, parseInt(capSelect.value,10)); });
+  document.getElementById('btnDetailDelete').addEventListener('click', deleteSelectedItem);
+}
+
+/* ===================== DRAG & DROP ===================== */
+function attachDragHandlers(el, item){
+  el.addEventListener('pointerdown', function(e){
+    if(currentView!=='layout') return;
+    e.preventDefault();
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    drag = { id: e.pointerId, item:item, el:el, startX:e.clientX, startY:e.clientY, origCol:item.col, origRow:item.row, moved:false };
+    el.classList.add('dragging');
+  });
+  el.addEventListener('pointermove', function(e){
+    if(!drag || drag.item!==item) return;
+    var dx = e.clientX-drag.startX, dy = e.clientY-drag.startY;
+    if(Math.abs(dx)>4 || Math.abs(dy)>4) drag.moved = true;
+    var baseLeft = cellX(drag.origCol), baseTop = cellY(drag.origRow);
+    el.style.left = (baseLeft+dx)+'px';
+    el.style.top = (baseTop+dy)+'px';
+    var newCol = clamp(Math.round((baseLeft+dx)/(CELL+GAP)), 0, state.cols-item.w);
+    var newRow = clamp(Math.round((baseTop+dy)/(CELL+GAP)), 0, state.rows-item.h);
+    showGhost(newCol, newRow, item.w, item.h, isValidPlacement(item,newCol,newRow));
+  });
+  function endDrag(e){
+    if(!drag || drag.item!==item) return;
+    hideGhost();
+    el.classList.remove('dragging');
+    if(drag.moved){
+      var dx = e.clientX-drag.startX, dy = e.clientY-drag.startY;
+      var baseLeft = cellX(drag.origCol), baseTop = cellY(drag.origRow);
+      var newCol = clamp(Math.round((baseLeft+dx)/(CELL+GAP)), 0, state.cols-item.w);
+      var newRow = clamp(Math.round((baseTop+dy)/(CELL+GAP)), 0, state.rows-item.h);
+      if(isValidPlacement(item,newCol,newRow)){ item.col=newCol; item.row=newRow; markDirty(); }
+      renderLayoutView();
+    } else {
+      selectItem(item.id);
+    }
+    drag = null;
+  }
+  el.addEventListener('pointerup', endDrag);
+  el.addEventListener('pointercancel', endDrag);
+}
+function focusItemEl(itemId){
+  var el = document.querySelector('#layoutCanvas .item[data-id="'+itemId+'"]');
+  if(!el) return;
+  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block:'center', inline:'center' });
+}
+function showGhost(col,row,w,h,valid){
+  var g = document.getElementById('dragGhost');
+  if(!g) return;
+  g.style.display='block';
+  g.style.left = cellX(col)+'px';
+  g.style.top = cellY(row)+'px';
+  g.style.width = boxW(w)+'px';
+  g.style.height = boxH(h)+'px';
+  g.classList.toggle('invalid', !valid);
+}
+function hideGhost(){
+  var g = document.getElementById('dragGhost');
+  if(g) g.style.display='none';
+}
+
+/* ===================== SEATING LOGIC ===================== */
+function getAllSeats(){
+  var desks = state.items.filter(function(i){ return i.type==='desk'; })
+    .slice().sort(function(a,b){ return (a.row-b.row) || (a.col-b.col); });
+  var seats = [];
+  desks.forEach(function(d){
+    for(var s=0;s<d.capacity;s++) seats.push({ itemId:d.id, seatIdx:s });
+  });
+  return seats;
+}
+
+document.getElementById('btnSpin').addEventListener('click', shuffleSeats);
+document.getElementById('btnUnlockAll').addEventListener('click', function(){
+  state.locks = {};
+  markDirty();
+  renderSeatView();
+  toast('ปลดล็อกที่นั่งทั้งหมดแล้ว');
+});
+document.getElementById('btnClearSeats').addEventListener('click', function(){
+  if(Object.keys(state.assignment).length===0 && Object.keys(state.locks).length===0) return;
+  if(!confirm('ล้างที่นั่งทั้งหมด (รวมที่ล็อกไว้) ใช่หรือไม่?')) return;
+  state.assignment = {};
+  state.locks = {};
+  state.waiting = [];
+  markDirty();
+  renderSeatView();
+  toast('ล้างที่นั่งทั้งหมดแล้ว');
+});
+document.getElementById('btnPrint').addEventListener('click', function(){
+  document.getElementById('printTitle').textContent = 'ผังที่นั่ง: ' + state.name;
+
+  var canvas = document.getElementById('seatCanvas');
+  var wrap = canvas.parentElement;
+  var naturalWidth = totalW(state.cols);
+  var naturalHeight = totalH(state.rows);
+  var PRINT_SAFE_WIDTH = 1050; // fits a landscape A4/Letter page with margins
+  var scale = naturalWidth > PRINT_SAFE_WIDTH ? (PRINT_SAFE_WIDTH / naturalWidth) : 1;
+
+  var prevTransform = canvas.style.transform;
+  var prevOrigin = canvas.style.transformOrigin;
+  var prevWrapWidth = wrap.style.width;
+  var prevWrapHeight = wrap.style.height;
+
+  if(scale < 1){
+    canvas.style.transformOrigin = 'top left';
+    canvas.style.transform = 'scale(' + scale + ')';
+    wrap.style.width = (naturalWidth*scale + 36) + 'px';
+    wrap.style.height = (naturalHeight*scale + 36) + 'px';
+  }
+
+  function restore(){
+    canvas.style.transform = prevTransform;
+    canvas.style.transformOrigin = prevOrigin;
+    wrap.style.width = prevWrapWidth;
+    wrap.style.height = prevWrapHeight;
+    window.removeEventListener('afterprint', restore);
+  }
+  window.addEventListener('afterprint', restore);
+  toast('🖨️ เปิดหน้าต่างพิมพ์...');
+  window.print();
+  setTimeout(restore, 4000);
+});
+
+function shuffleSeats(){
+  if(state.students.length===0){ toast('เพิ่มรายชื่อนักเรียนก่อนในแท็บ "รายชื่อนักเรียน"'); return; }
+  var seats = getAllSeats();
+  if(seats.length===0){ toast('เพิ่มโต๊ะนักเรียนก่อนในแท็บ "ผังห้องเรียน"'); return; }
+
+  var lockedStudentIds = {};
+  Object.keys(state.locks).forEach(function(k){ lockedStudentIds[state.locks[k]] = true; });
+
+  var freeSeats = seats.filter(function(s){ return !(seatKey(s.itemId,s.seatIdx) in state.locks); });
+  var freeStudentIds = shuffleArray(state.students.filter(function(st){ return !lockedStudentIds[st.id]; }).map(function(st){ return st.id; }));
+
+  var newAssign = {};
+  Object.keys(state.locks).forEach(function(k){ newAssign[k] = state.locks[k]; });
+  var n = Math.min(freeSeats.length, freeStudentIds.length);
+  for(var i=0;i<n;i++){ newAssign[seatKey(freeSeats[i].itemId, freeSeats[i].seatIdx)] = freeStudentIds[i]; }
+  for(var j=n;j<freeSeats.length;j++){ newAssign[seatKey(freeSeats[j].itemId, freeSeats[j].seatIdx)] = null; }
+
+  var waitingIds = freeStudentIds.slice(n);
+
+  if(reduceMotion){
+    state.assignment = newAssign;
+    state.waiting = waitingIds;
+    markDirty();
+    renderSeatView();
+    return;
+  }
+
+  var spinBtn = document.getElementById('btnSpin');
+  spinBtn.disabled = true;
+  var names = state.students.map(function(s){ return s.name; });
+  var cells = Array.prototype.slice.call(document.querySelectorAll('#seatCanvas .seat-cell[data-seatkey]'))
+    .filter(function(c){ return !(c.dataset.seatkey in state.locks); });
+  var prevAssign = Object.assign({}, state.assignment);
+
+  var reelInterval = setInterval(function(){
+    cells.forEach(function(c){
+      var nameEl = c.querySelector('.seat-name, .seat-empty-txt');
+      var randomName = names.length ? names[Math.floor(Math.random()*names.length)] : 'ว่าง';
+      if(nameEl) nameEl.textContent = randomName;
+      c.classList.add('reel');
+    });
+  }, 70);
+
+  setTimeout(function(){
+    clearInterval(reelInterval);
+    state.assignment = newAssign;
+    state.waiting = waitingIds;
+    markDirty();
+    renderSeatView(prevAssign);
+    spinBtn.disabled = false;
+  }, 650);
+}
+
+function toggleLock(itemId, seatIdx){
+  var key = seatKey(itemId, seatIdx);
+  if(key in state.locks){
+    delete state.locks[key];
+  } else {
+    var sid = state.assignment[key];
+    if(!sid) return;
+    state.locks[key] = sid;
+  }
+  markDirty();
+  renderSeatView();
+}
+
+function recomputeWaiting(){
+  var seatedIds = {};
+  Object.keys(state.assignment).forEach(function(k){
+    var v = state.assignment[k];
+    if(v) seatedIds[v] = true;
+  });
+  state.waiting = state.students.filter(function(s){ return !seatedIds[s.id]; }).map(function(s){ return s.id; });
+}
+
+function assignSeatManually(itemId, seatIdx, studentId){
+  var key = seatKey(itemId, seatIdx);
+  if(!studentId){
+    delete state.assignment[key];
+    delete state.locks[key];
+  } else {
+    Object.keys(state.assignment).forEach(function(k){
+      if(k!==key && state.assignment[k]===studentId){
+        delete state.assignment[k];
+        delete state.locks[k];
+      }
+    });
+    state.assignment[key] = studentId;
+    state.locks[key] = studentId;
+  }
+  recomputeWaiting();
+  markDirty();
+}
+
+function itemInnerHtmlSeat(item, deskNo, studentMap, prevAssign){
+  if(item.type==='board') return '<div class="item-label">🖥️<br>กระดาน</div>';
+  if(item.type==='teacher') return '<div class="item-icon">🧑‍🏫</div><div class="item-label">โต๊ะครู</div>';
+  var shape = CAP_SHAPE[item.capacity];
+  var cellsHtml = '';
+  for(var s=0;s<item.capacity;s++){
+    var key = seatKey(item.id,s);
+    var sid = state.assignment[key];
+    var locked = key in state.locks;
+    var st = sid ? studentMap[sid] : null;
+    var changed = prevAssign && prevAssign[key]!==sid;
+    var cls = 'seat-cell' + (st?' filled':'') + (locked?' locked':'') + (changed?' pop':'');
+    var inner;
+    if(key === editingSeatKey){
+      cls += ' editing';
+      var opts = '<option value="">— ว่าง —</option>';
+      state.students.forEach(function(stu){
+        opts += '<option value="'+stu.id+'"'+(stu.id===sid?' selected':'')+'>'+escapeHtml(stu.name)+'</option>';
+      });
+      inner = '<select class="seat-pick" data-itemid="'+item.id+'" data-seatidx="'+s+'">'+opts+'</select>';
+    } else {
+      inner = st
+        ? '<span class="seat-name">'+escapeHtml(st.name)+'</span><button class="lock-btn" data-itemid="'+item.id+'" data-seatidx="'+s+'" aria-label="ล็อกที่นั่งนี้">'+(locked?'📌':'📍')+'</button>'
+        : '<span class="seat-empty-txt">ว่าง</span>';
+    }
+    cellsHtml += '<div class="'+cls+'" data-seatkey="'+key+'">'+inner+'</div>';
+  }
+  return '<span class="desk-badge">'+deskNo+'</span>'+
+    '<div class="seat-grid" style="grid-template-columns:repeat('+shape.w+',1fr);grid-template-rows:repeat('+shape.h+',1fr);">'+cellsHtml+'</div>';
+}
+
+function renderSeatView(prevAssign){
+  var canvas = document.getElementById('seatCanvas');
+  setupCanvasBase(canvas, state.cols, state.rows);
+  canvas.innerHTML='';
+
+  var deskNos = deskNumbers();
+  var studentMap = {};
+  state.students.forEach(function(s){ studentMap[s.id]=s; });
+
+  state.items.forEach(function(item){
+    var el = document.createElement('div');
+    el.className = 'item item-'+item.type;
+    el.style.left = cellX(item.col)+'px';
+    el.style.top = cellY(item.row)+'px';
+    el.style.width = boxW(item.w)+'px';
+    el.style.height = boxH(item.h)+'px';
+    el.style.cursor = 'default';
+    el.innerHTML = itemInnerHtmlSeat(item, deskNos[item.id], studentMap, prevAssign);
+    canvas.appendChild(el);
+  });
+
+  canvas.querySelectorAll('.lock-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      toggleLock(btn.dataset.itemid, parseInt(btn.dataset.seatidx,10));
+    });
+  });
+  canvas.querySelectorAll('.seat-cell').forEach(function(cell){
+    cell.addEventListener('click', function(e){
+      if(e.target.closest('.lock-btn') || e.target.closest('.seat-pick')) return;
+      var key = cell.dataset.seatkey;
+      if(editingSeatKey===key) return;
+      editingSeatKey = key;
+      renderSeatView();
+    });
+  });
+  canvas.querySelectorAll('.seat-pick').forEach(function(sel){
+    sel.addEventListener('click', function(e){ e.stopPropagation(); });
+    sel.addEventListener('change', function(){
+      var prev = Object.assign({}, state.assignment);
+      assignSeatManually(sel.dataset.itemid, parseInt(sel.dataset.seatidx,10), sel.value || null);
+      editingSeatKey = null;
+      renderSeatView(prev);
+    });
+    sel.addEventListener('blur', function(){
+      var parentKey = sel.closest('.seat-cell').dataset.seatkey;
+      if(editingSeatKey===parentKey){
+        editingSeatKey = null;
+        renderSeatView();
+      }
+    });
+    try{ sel.focus(); if(sel.showPicker) sel.showPicker(); }catch(err){}
+  });
+  canvas.querySelectorAll('.seat-cell.pop').forEach(function(c){
+    setTimeout(function(){ c.classList.remove('pop'); }, 450);
+  });
+
+  var seats = getAllSeats();
+  var filledCount = seats.filter(function(s){ return !!state.assignment[seatKey(s.itemId,s.seatIdx)]; }).length;
+  var lockedCount = Object.keys(state.locks).length;
+  var summary = document.getElementById('seatSummary');
+  summary.innerHTML =
+    '<div class="s-item">👥 นักเรียน: '+state.students.length+' คน</div>'+
+    '<div class="s-item">🪑 ที่นั่งทั้งหมด: '+seats.length+' ที่</div>'+
+    '<div class="s-item">✅ จัดแล้ว: '+filledCount+' ที่</div>'+
+    '<div class="s-item">📌 ล็อกไว้: '+lockedCount+' ที่</div>';
+
+  var benchWrap = document.getElementById('benchWrap');
+  var waiting = (state.waiting||[]).map(function(id){ return studentMap[id]; }).filter(Boolean);
+  if(waiting.length>0){
+    benchWrap.style.display='block';
+    document.getElementById('benchList').innerHTML = waiting.map(function(s){
+      return '<span class="bench-chip">'+escapeHtml(s.name)+'</span>';
+    }).join('');
+  } else {
+    benchWrap.style.display='none';
+  }
+
+  var spinBtn = document.getElementById('btnSpin');
+  if(state.students.length===0){ spinBtn.disabled=true; spinBtn.title='เพิ่มรายชื่อนักเรียนก่อน'; }
+  else if(seats.length===0){ spinBtn.disabled=true; spinBtn.title='เพิ่มโต๊ะนักเรียนก่อน'; }
+  else { spinBtn.disabled=false; spinBtn.title=''; }
+}
+
+/* ===================== MASTER RENDER ===================== */
+function renderAll(){
+  document.getElementById('classroomNameDisplay').textContent = state.name;
+  renderRoster();
+  renderLayoutView();
+  renderSeatView();
+}
+function render(){
+  if(currentView==='roster') renderRoster();
+  else if(currentView==='layout') renderLayoutView();
+  else if(currentView==='seat') renderSeatView();
+}
+
+/* ===================== BOOT ===================== */
+boot();
+
+})();
+</script>
+</body>
+</html>
